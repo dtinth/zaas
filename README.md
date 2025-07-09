@@ -68,17 +68,14 @@ volumes:
   data:
 ```
 
-Create a `stack.env` file:
-
-```env
-DATABASE_URL=file:/data/local.db
-MASTER_API_KEYS=topsecret
-PORT=32700
-```
-
 ### Deployment Steps
 
-1. **Prepare environment file**.
+1. **Prepare environment file**:
+
+   ```bash
+   cp .env.example stack.env
+   # Edit stack.env with your configuration
+   ```
 
 2. **Deploy with Docker Compose**:
 
