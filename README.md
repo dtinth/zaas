@@ -48,52 +48,123 @@ zaas implements a "zipper" concept where:
 5. **View API documentation**:
    Open http://localhost:32700/swagger
 
+## Docker Deployment
+
+### Using Docker Compose (Portainer)
+
+Create a `docker-compose.yml` file:
+
+```yaml
+services:
+  dashboard:
+    image: ghcr.io/dtinth/zaas:latest
+    restart: unless-stopped
+    env_file: stack.env
+    ports:
+      - 127.0.0.1:32700:32700
+    volumes:
+      - data:/data
+volumes:
+  data:
+```
+
+Create a `stack.env` file:
+
+```env
+DATABASE_URL=file:/data/local.db
+MASTER_API_KEYS=topsecret
+PORT=32700
+```
+
+### Deployment Steps
+
+1. **Prepare environment file**.
+
+2. **Deploy with Docker Compose**:
+
+   ```bash
+   docker-compose up -d
+   ```
+
+3. **Access the service**:
+   - API: http://localhost:32700
+   - Documentation: http://localhost:32700/swagger
+
 ## API Endpoints
+
+### Variables for VS Code REST Extension
+
+Create a `.env` file in your project root for VS Code REST Extension:
+
+```env
+ZAAS_URL=http://localhost:32700
+ZAAS_API_KEY=your-api-key-here
+ZAAS_MASTER_API_KEY=your-master-key-here
+```
+
+```http
+@baseUrl = {{$dotenv ZAAS_URL}}
+@apiKey = {{$dotenv ZAAS_API_KEY}}
+@masterApiKey = {{$dotenv ZAAS_MASTER_API_KEY}}
+```
 
 ### Item Management
 
 #### Match Item to Requestor
 
-```
-POST /namespaces/{namespace}/match
-Headers: x-api-key: <your-api-key>
-Body: { "requestor": "user123" }
+```http
+POST {{baseUrl}}/namespaces/my-namespace/match
+Content-Type: application/json
+x-api-key: {{apiKey}}
+
+{
+  "requestor": "user123"
+}
 ```
 
 Returns the first available item for the requestor. If the requestor has already been matched, returns the same item.
 
 #### Get Items
 
-```
-GET /namespaces/{namespace}/items?item=<item>&requestor=<requestor>
-Headers: x-api-key: <your-api-key>
+```http
+GET {{baseUrl}}/namespaces/my-namespace/items?item=promo-code-1&requestor=user123
+x-api-key: {{apiKey}}
 ```
 
 Retrieve items in a namespace with optional filtering.
 
 #### Get Statistics
 
-```
-GET /namespaces/{namespace}/stats
-Headers: x-api-key: <your-api-key>
+```http
+GET {{baseUrl}}/namespaces/my-namespace/stats
+x-api-key: {{apiKey}}
 ```
 
 Returns total, matched, and available item counts.
 
 #### Batch Add/Remove Items
 
-```
-PATCH /namespaces/{namespace}/items
-Headers: x-api-key: <your-api-key>
-Body: { "add": ["item1", "item2"], "remove": ["item3"] }
+```http
+PATCH {{baseUrl}}/namespaces/my-namespace/items
+Content-Type: application/json
+x-api-key: {{apiKey}}
+
+{
+  "add": ["item1", "item2"],
+  "remove": ["item3"]
+}
 ```
 
 #### Synchronize Items
 
-```
-PUT /namespaces/{namespace}/items
-Headers: x-api-key: <your-api-key>
-Body: { "items": ["item1", "item2", "item3"] }
+```http
+PUT {{baseUrl}}/namespaces/my-namespace/items
+Content-Type: application/json
+x-api-key: {{apiKey}}
+
+{
+  "items": ["item1", "item2", "item3"]
+}
 ```
 
 Ensures the namespace contains exactly the specified items.
@@ -102,24 +173,29 @@ Ensures the namespace contains exactly the specified items.
 
 #### Create API Key
 
-```
-POST /admin/api-keys
-Headers: x-master-api-key: <master-key>
-Body: { "apiKey": "new-key", "namespace": "my-namespace" }
+```http
+POST {{baseUrl}}/admin/api-keys
+Content-Type: application/json
+x-master-api-key: {{masterApiKey}}
+
+{
+  "apiKey": "new-key",
+  "namespace": "my-namespace"
+}
 ```
 
 #### Delete API Key
 
-```
-DELETE /admin/api-keys/{apiKey}
-Headers: x-master-api-key: <master-key>
+```http
+DELETE {{baseUrl}}/admin/api-keys/new-key
+x-master-api-key: {{masterApiKey}}
 ```
 
 #### List API Keys
 
-```
-GET /admin/api-keys
-Headers: x-master-api-key: <master-key>
+```http
+GET {{baseUrl}}/admin/api-keys
+x-master-api-key: {{masterApiKey}}
 ```
 
 ## Configuration
@@ -147,6 +223,7 @@ Distributing promotional codes:
 ## Development Commands
 
 - `bun run dev`: Start development server with hot reload
+- `bun run start`: Start production server
 - `bun run db:push`: Push schema changes to database
 - `bun run db:generate`: Generate migration files
 - `bun run db:migrate`: Apply migrations
